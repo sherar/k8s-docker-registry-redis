@@ -1,0 +1,157 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: docker-registry
+  labels:
+    name: docker-registry
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Issuer
+metadata:
+  name: acme-issuer
+spec:
+  acme:
+    email: sherar@gmail.com
+    server: https://acme-v01.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: acme-issuer-account-key
+    solvers:
+    - http01: 
+        ingress:
+          class: nginx
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: docker-registry
+spec:
+  secretName: docker-registry-tls-certificate
+  issuerRef:
+    name: acme-issuer
+  dnsNames:
+  - local.dev
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: docker-registry
+type: Opaque
+data:
+  HTPASSWD: YWRtaW46JDJ5JDA1JHJwWHlibVNIMWhEV2VFYjJJUHg5aS5ENmh0MVZjMVBob3YyUnlXSEQzOFdEM1EvYlQ3em8uCgo=
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docker-registry
+data:
+  registry-config.yml: |
+    version: 0.1
+    log:
+      fields:
+        service: registry
+    storage:
+      cache:
+        blobdescriptor: inmemory
+      filesystem:
+        rootdirectory: /var/lib/registry
+    http:
+      addr: :5000
+      headers:
+        X-Content-Type-Options: [nosniff]
+    auth:
+      htpasswd:
+        realm: basic-realm
+        path: /auth/htpasswd
+    health:
+      storagedriver:
+        enabled: true
+        interval: 10s
+        threshold: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-registry
+  namespace: docker-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docker-registry
+  template:
+    metadata:
+      labels:
+        app: docker-registry
+    spec:
+      containers:
+        - name: docker-registry
+          image: registry:2.6.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/docker/registry
+              readOnly: true
+            - name: htpasswd
+              mountPath: /auth
+              readOnly: true
+            - name: storage
+              mountPath: /var/lib/registry
+      volumes:
+        - name: config
+          configMap:
+            name: docker-registry
+            items:
+              - key: registry-config.yml
+                path: config.yml
+        - name: htpasswd
+          secret:
+            secretName: docker-registry
+            items:
+            - key: HTPASSWD
+              path: htpasswd
+        - name: storage
+          emptyDir: {}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: docker-registry
+  namespace: docker-registry
+  labels:
+    app: docker-registry
+spec:
+  selector:
+    app: docker-registry
+  ports:
+  - name: http
+    port: 5000
+---    
+apiVersion: networking.k8s.io/v1 
+kind: Ingress
+metadata:
+  name: docker-registry
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    certmanager.k8s.io/issuer: acme-issuer
+  namespace: docker-registry
+spec:
+  tls:
+  - hosts:
+    - registry.mydomain.com
+    secretName: docker-registry-tls-certificate
+  rules:
+  - host: registry.mydomain.com
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: docker-registry
+              port: 
+                number: 5000
