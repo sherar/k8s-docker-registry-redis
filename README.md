@@ -2,8 +2,9 @@
 Author: Gerardo Prieto
 
 ## Requirements
+
 - Kubernetes cluster
-- Helm installed
+- Helm installed (https://helm.sh/docs/intro/install/)
 - Nginx ingress controller enabled
 - Docker installed
 
