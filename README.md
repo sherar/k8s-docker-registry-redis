@@ -25,7 +25,7 @@ helm install docker-registry ./docker-registry \
 		   --set registryStorage=5Gi 
 ```
 
-Note: `admin` / `admin1234` credentials should be changed for Production usage
+_Note: `admin` / `admin1234` credentials should be changed for Production usage_
 
 
 ## Local docker-registry
@@ -58,6 +58,11 @@ docker tag busybox:latest registry.wolt.com/busybox:latest
 docker push registry.wolt.com/busybox:latest
 ```
 
+## Uninstall
+
+```
+helm uninstall docker-registry
+```
 
 # Improvements / Ideas:
 - AWS S3 is a better solution for storage as it's cheaper than Persistent Volumes
