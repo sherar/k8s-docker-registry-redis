@@ -12,7 +12,7 @@ metadata:
     tier: backend
 spec:
   acme:
-    email: sherar@gmail.com
+    email: {{ .Values.emailContact}}
     server: https://acme-v01.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: acme-issuer-account-key
@@ -33,7 +33,7 @@ spec:
   issuerRef:
     name: acme-issuer
   dnsNames:
-  - local.dev
+  - {{ .Values.host}}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -48,9 +48,8 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 5Gi
+      storage: {{ .Values.registryStorage}}
 ---
-# docker run --entrypoint htpasswd --rm httpd -Bbn admin admin123 | base64
 apiVersion: v1
 kind: Secret
 metadata:
@@ -61,7 +60,7 @@ metadata:
     tier: backend
 type: Opaque
 data:
-  HTPASSWD: YWRtaW46JDJ5JDA1JDlkc0VWcGphUGVNWWFSYzA1WmNyb09OSy9wSVV6ZXdZLzhlQkNhL09Md3lXL0xLOGkxdGNhCgo=
+  HTPASSWD: {{ .Values.htpasswd}}
 ---
 kind: Service
 apiVersion: v1
@@ -123,7 +122,6 @@ spec:
   resources:
     requests:
       storage: 5Gi      
-
 ---    
 apiVersion: v1
 kind: ConfigMap
@@ -258,10 +256,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - local.dev
+    - {{ .Values.host}}
     secretName: docker-registry-tls-certificate
   rules:
-  - host: local.dev
+  - host: {{ .Values.host}}
     http:
       paths:
         - path: /
