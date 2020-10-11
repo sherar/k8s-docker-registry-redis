@@ -32,13 +32,13 @@ _Note: `admin` / `admin1234` credentials should be changed for Production usage_
 ## Local docker-registry
 
 ```
-kubectl port-forward deployment/docker-registry 5000:5000 -n docker-registry
+kubectl port-forward service/docker-registry 5000 -n docker-registry
 ```
 
+`
+curl -u admin:admin1234 localhost.com:5000/v2/_catalog
+`
 
-`
-curl -u admin:admin1234 http://localhost.com/v2/_catalog
-`
 
 ## Runing in Production:
 

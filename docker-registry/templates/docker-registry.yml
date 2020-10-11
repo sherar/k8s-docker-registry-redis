@@ -142,6 +142,8 @@ data:
         blobdescriptor: redis
       filesystem:
         rootdirectory: /var/lib/registry
+      delete:
+        enabled: true
     redis:
       addr: redis-master:6379
     http:
@@ -172,14 +174,15 @@ data:
 kind: Service
 apiVersion: v1
 metadata:
-  name: registry
+  name: docker-registry
   namespace: docker-registry
   labels:
     app: registry
     tier: frontend
 spec:
+  clusterIP: None 
   selector:
-    app: registry
+    app: docker-registry
   ports:
   - name: http
     port: 5000
@@ -206,7 +209,7 @@ spec:
       containers:
         - name: docker-registry
           image: registry:2.6.2
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
           - name: http
             containerPort: 5000
@@ -245,6 +248,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   annotations:
+    kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
@@ -266,6 +270,26 @@ spec:
           pathType: Prefix
           backend:
             service:
-              name: registry
+              name: docker-registry
               port: 
                 number: 5000
+---
+## Optional Task
+# apiVersion: batch/v1beta1
+# kind: CronJob
+# metadata:
+#   name: hello
+# spec:
+#   schedule: "*/12 * * * *"
+#   jobTemplate:
+#     spec:
+#       template:
+#         spec:
+#           containers:
+#           - name: hello
+#             image: busybox
+#             args:
+#             - /bin/sh
+#             - -c
+#             - date; echo Hello from the Kubernetes cluster
+#           restartPolicy: OnFailure
