@@ -101,16 +101,14 @@ helm uninstall docker-registry
 - Using Terraform and/or Ansible could be a potential next step for this soultion, in terms of automation.
 
 
-<!-- LICENSE -->
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
 
 
-<!-- CONTACT -->
 ## Contact
 
-Gerardo Prieto - [@your_twitter](https://twitter.com/your_username) - email@example.com
+Gerardo Prieto - sherar@gmail.com
 
-Project Link: [https://github.com/sherar/repo_name](https://github.com/your_username/repo_name)
+Project Link: [https://github.com/sherar/k8s-docker-registry](https://github.com/sherar/k8s-docker-registry)
