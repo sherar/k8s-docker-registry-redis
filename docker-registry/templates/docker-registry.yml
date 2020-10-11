@@ -1,7 +1,9 @@
+# Namespace
 apiVersion: v1
 kind: Namespace
 metadata:
   name: docker-registry
+## Issuer and Certificate for TLS support
 ---
 apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
@@ -12,7 +14,7 @@ metadata:
     tier: backend
 spec:
   acme:
-    email: {{ .Values.emailContact}}
+    email: {{ .Values.registry.email }}
     server: https://acme-v01.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: acme-issuer-account-key
@@ -33,35 +35,9 @@ spec:
   issuerRef:
     name: acme-issuer
   dnsNames:
-  - {{ .Values.host}}
+  - {{ .Values.registry.dns }}
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: docker-registry-pv
-  namespace: docker-registry
-  labels:
-    app: registry
-    tier: backend
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: {{ .Values.registryStorage}}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: docker-registry
-  namespace: docker-registry
-  labels:
-    app: registry
-    tier: backend
-type: Opaque
-data:
-  HTPASSWD: {{ .Values.htpasswd}}
----
+## Redis
 kind: Service
 apiVersion: v1
 metadata:
@@ -121,7 +97,36 @@ spec:
   accessModes: [ReadWriteOnce]
   resources:
     requests:
-      storage: 5Gi      
+      storage: 5Gi 
+---
+# Docker Registry resources
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: docker-registry-pv
+  namespace: docker-registry
+  labels:
+    app: registry
+    tier: backend
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.registry.storage }}
+---
+# Docker Registry secret used for auth
+apiVersion: v1
+kind: Secret
+metadata:
+  name: docker-registry
+  namespace: docker-registry
+  labels:
+    app: registry
+    tier: backend
+type: Opaque
+data:
+  HTPASSWD: {{ .Values.registry.htpasswd }}
 ---    
 apiVersion: v1
 kind: ConfigMap
@@ -180,7 +185,7 @@ metadata:
     app: registry
     tier: frontend
 spec:
-  clusterIP: None 
+  type: ClusterIP
   selector:
     app: docker-registry
   ports:
@@ -260,10 +265,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - {{ .Values.host}}
+    - {{ .Values.registry.dns }}
     secretName: docker-registry-tls-certificate
   rules:
-  - host: {{ .Values.host}}
+  - host: {{ .Values.registry.dns }}
     http:
       paths:
         - path: /
@@ -274,22 +279,55 @@ spec:
               port: 
                 number: 5000
 ---
-## Optional Task
-# apiVersion: batch/v1beta1
-# kind: CronJob
-# metadata:
-#   name: hello
-# spec:
-#   schedule: "*/12 * * * *"
-#   jobTemplate:
-#     spec:
-#       template:
-#         spec:
-#           containers:
-#           - name: hello
-#             image: busybox
-#             args:
-#             - /bin/sh
-#             - -c
-#             - date; echo Hello from the Kubernetes cluster
-#           restartPolicy: OnFailure
+## Optional Task - Retention Job
+## For more details see README.md file and also visit https://github.com/tumblr/docker-registry-pruner
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: docker-registry-pruner
+  namespace: docker-registry
+  labels:
+    app: docker-registry-pruner
+    tier: backend
+spec:
+  schedule: "*/12 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: pruner
+            image: tumblr/docker-registry-pruner
+            args: 
+            - --mode prune --config ./config/myconfig.yaml
+            volumeMounts:
+            - name: pruner-config
+              mountPath: /app/config/
+          restartPolicy: OnFailure
+          volumes:
+            - name: pruner-config
+              configMap:
+                name: pruner-config
+---
+## Docker Registry Pruner config is loaded here
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pruner-config
+  namespace: docker-registry
+  labels:
+    app: docker-registry-pruner
+    tier: backend
+data:
+  registry-config.yml: |
+    registry: http://docker-registry:5000
+    username: {{ .Values.registry.username }}
+    password: {{ .Values.registry.password }}
+    parallel_workers: 10
+    rules:
+      - repos:
+        - app/calculator
+        keep_recent: 10
+      - repos:
+        - app/jmeter
+        keep_recent: 5

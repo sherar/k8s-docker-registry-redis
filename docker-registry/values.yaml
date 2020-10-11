@@ -11,18 +11,13 @@ nameOverride: ""
 fullnameOverride: ""
 
 serviceAccount:
-  # Specifies whether a service account should be created
   create: false
-  # Annotations to add to the service account
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
   name: "registry"
 
 podAnnotations: {}
 
 podSecurityContext: {}
-  # fsGroup: 2000
 
 securityContext: {}
   # capabilities:
@@ -39,15 +34,10 @@ service:
 ingress:
   enabled: false
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
   hosts:
     - host: chart-example.local
       paths: []
   tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
 
 resources:
    limits:
@@ -69,9 +59,10 @@ tolerations: []
 affinity: {}
 
 # Deployment values
-emailContact: sherar@gmail.com
-host: registry.wolt.com
-htpasswd: YWRtaW46JDJ5JDA1JDlkc0VWcGphUGVNWWFSYzA1WmNyb09OSy9wSVV6ZXdZLzhlQkNhL09Md3lXL0xLOGkxdGNhCgo=
-registryStorage: 5Gi
-
-
+registry:
+  dns: registry.wolt.com
+  username: admin
+  password: admin1234
+  email: sherar@gmail.com
+  htpasswd: YWRtaW46JDJ5JDA1JDlkc0VWcGphUGVNWWFSYzA1WmNyb09OSy9wSVV6ZXdZLzhlQkNhL09Md3lXL0xLOGkxdGNhCgo=
+  storage: 5Gi

@@ -19,11 +19,22 @@ kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/relea
 - Install this docker-registry solution with Helm:
 
 ```
+helm install docker-registry ./docker-registry
+```
+
+or by changing default config:
+
+```
+export REGISTRY_USERNAME=admin
+export REGISTRY_PASSWORD=admin1234
+
 helm install docker-registry ./docker-registry \
-		   --set emailContact=admin@wolt.com \
-		   --set host=registry.wolt.com \
-		   --set htpasswd=$(docker run --entrypoint htpasswd --rm httpd -Bbn admin admin1234 | base64) \
-		   --set registryStorage=5Gi 
+--set registry.dns=test.wolt.com \
+--set registry.email=admin@wolt.com \
+--set registry.username=$REGISTRY_USERNAME \
+--set registry.password=$REGISTRY_PASSWORD \
+--set registry.htpasswd=$(docker run --entrypoint htpasswd --rm httpd -Bbn $REGISTRY_USERNAME $REGISTRY_PASSWORD | base64) \
+--set registry.storage=5Gi
 ```
 
 _Note: `admin` / `admin1234` credentials should be changed for Production usage_
@@ -59,14 +70,30 @@ docker tag busybox:latest registry.wolt.com/busybox:latest
 docker push registry.wolt.com/busybox:latest
 ```
 
-## Uninstall
+## Tear down
 
 ```
 helm uninstall docker-registry
 ```
 
+## Optional task:
+
+### The plan
+- Different docker image repositories need to be pruned based on different conditions (latest X images, images starting with PR, keep only semantic releases, etc) and needs to be automated.
+
+### The Solution
+- Docker Registry Pruner image (https://github.com/tumblr/docker-registry-pruner) takes care of this by passing desired config file and docker-registry URL (See https://github.com/tumblr/docker-registry-pruner/blob/master/config/examples/example.yaml)
+- A Kubernetes CronJob will do the work by calling this image every 12 hours and prune all images matching desired configuration
+
+### Considerations
+- docker-registry image deletion needs to be enabled. This is already done by default in this solution.
+- If using AWS S3 for storage it's easier to do this by just using a clean up Lyfecicle Rule matching a particular object
+
+
 # Improvements / Ideas:
-- AWS S3 is a better solution for storage as it's cheaper than Persistent Volumes
+- Added cert-manager for TLS support so it can be used in Production
+- AWS S3 is a better solution for storage as it's cheaper than Persistent Volumes.
+- Using Terraform and/or Ansible could be a potential next step for this soultion, in terms of automation.
 
 # Comments:
 - For the garbage collect cron job I've set a crontab that performs `garbage-collect` internally in registry container rather than using a Kubernetes CronJob
