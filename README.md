@@ -1,5 +1,5 @@
 # Wolt - DevOps Assignment 1.2
-Author: Gerardo Prieto
+- Author: Gerardo Prieto
 
 ## Requirements
 
@@ -78,22 +78,39 @@ helm uninstall docker-registry
 
 ## Optional task:
 
-### The plan
+### The Plan
+
 - Different docker image repositories need to be pruned based on different conditions (latest X images, images starting with PR, keep only semantic releases, etc) and needs to be automated.
 
 ### The Solution
+
 - Docker Registry Pruner image (https://github.com/tumblr/docker-registry-pruner) takes care of this by passing desired config file and docker-registry URL (See https://github.com/tumblr/docker-registry-pruner/blob/master/config/examples/example.yaml)
 - A Kubernetes CronJob will do the work by calling this image every 12 hours and prune all images matching desired configuration
 
 ### Considerations
+
 - docker-registry image deletion needs to be enabled. This is already done by default in this solution.
-- If using AWS S3 for storage it's easier to do this by just using a clean up Lyfecicle Rule matching a particular object
+- If using AWS S3 for storage it's easier to do this by just using a clean up Lyfecicle Rule matching a particular object.
 
 
-# Improvements / Ideas:
-- Added cert-manager for TLS support so it can be used in Production
+# Improvements / Ideas
+
+- Added cert-manager for TLS support so it can be used in Production.
+- For the garbage collect cron job I've set a crontab that performs `garbage-collect` internally in registry container rather than using a Kubernetes CronJob.
 - AWS S3 is a better solution for storage as it's cheaper than Persistent Volumes.
 - Using Terraform and/or Ansible could be a potential next step for this soultion, in terms of automation.
 
-# Comments:
-- For the garbage collect cron job I've set a crontab that performs `garbage-collect` internally in registry container rather than using a Kubernetes CronJob
+
+<!-- LICENSE -->
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+
+
+<!-- CONTACT -->
+## Contact
+
+Gerardo Prieto - [@your_twitter](https://twitter.com/your_username) - email@example.com
+
+Project Link: [https://github.com/sherar/repo_name](https://github.com/your_username/repo_name)
