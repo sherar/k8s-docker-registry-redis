@@ -30,8 +30,8 @@ export REGISTRY_USERNAME=admin
 export REGISTRY_PASSWORD=admin1234
 
 helm install docker-registry ./docker-registry \
---set registry.dns=test.wolt.com \
---set registry.email=admin@wolt.com \
+--set registry.dns=test.yourcompany.com \
+--set registry.email=admin@yourcompany.com \
 --set registry.username=$REGISTRY_USERNAME \
 --set registry.password=$REGISTRY_PASSWORD \
 --set registry.htpasswd=$(docker run --entrypoint htpasswd --rm httpd -Bbn $REGISTRY_USERNAME $REGISTRY_PASSWORD | base64) \
@@ -54,21 +54,21 @@ curl -u admin:admin1234 localhost.com:5000/v2/_catalog
 
 ## Runing in Production:
 
-- A domain record pointing to the K8s cluster is needed (e.g: registry.wolt.com)
+- A domain record pointing to the K8s cluster is needed (e.g: registry.yourcompany.com)
 - `cert-manager` will automatically create a TLS certificate using Issuer and Certificate resources using Let's Encrypt
 
 `
-curl -u user:password https://registry.wolt.com/v2/_catalog
+curl -u user:password https://registry.yourcompany.com/v2/_catalog
 `
 
 
 ## Usage:
 
 ```
-docker login https://registry.wolt.com -u admin -p admin1234
+docker login https://registry.yourcompany.com -u admin -p admin1234
 docker pull busybox:latest
-docker tag busybox:latest registry.wolt.com/busybox:latest
-docker push registry.wolt.com/busybox:latest
+docker tag busybox:latest registry.yourcompany.com/busybox:latest
+docker push registry.yourcompany.com/busybox:latest
 ```
 
 ## Tear down
