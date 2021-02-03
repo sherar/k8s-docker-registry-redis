@@ -1,5 +1,6 @@
-# Wolt - DevOps Assignment 1.2
-- Author: Gerardo Prieto
+# K8s Docker Registry + Redis
+
+K8s Docker Registry with Redis for image caching
 
 ## Requirements
 
